@@ -10,8 +10,6 @@ __license__ = "MIT License"
 
 __status__ = "Prototype"
 
-##Test
-
 # imports one per line
 import re
 import datetime
