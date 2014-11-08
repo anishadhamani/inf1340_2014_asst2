@@ -26,81 +26,73 @@ def decide(input_file, watchlist_file, countries_file):
         an entry or transit visa is required, and whether there is currently a medical advisory
     :return: List of strings. Possible values of strings are: "Accept", "Reject", "Secondary", and "Quarantine"
     """
-    try:
-        with open("example_entries.json", "r") as file_reader:
-            input_file = json.loads(file_reader.read())
-            print(input_file)
 
-        with open("watchlist.json", "r") as file_reader:
-            watchlist_file = json.loads(file_reader.read())
-            print(watchlist_file)
+    input_info = json.load(open(input_file))
+    watchlist = json.load(open(watchlist_file))
+    countries = json.load(open(countries_file))
 
-        with open("countries.json", "r") as file_reader:
-            countries_file = json.loads(file_reader.read())
-            print(countries_file)
-    except FileNotFoundError:
-        raise FileNotFoundError("File not found")
+    priority_list = ["Quarantine", "Reject", "Secondary", "Accept"]
 
-    return ["Reject"]
+    for entry in range(len(input_info)):
+        result = ["Accept", valid_entry_record(input_info[entry]), test_returning_home(input_info[entry]),
+                  test_watchlist(input_info[entry], watchlist), test_quarantine(input_info[entry], countries)]
+        print(result)
+        # removing None values from the list
+        result = [item for item in result if item is not None]
+    return result
 
 
 def valid_entry_record(input_data):
     """
     Checks whether the required information of an entry record is complete or incomplete
     :param input_data: dictionary with information about travellers
-    :return: Boolean; True if record is complete, False otherwise
+    :return: List of strings, Reject if record is not complete
     """
-    for entry in input_data.values():
-        if not valid_passport_format(input_data["passport"]):
-            return ["Reject"]
-        if not valid_date_format(input_data["birth_date"]):
-            return ["Reject"]
-        if (input_data["first_name"]) is None or (input_data["last_name"]) is None or (input_data["home"]) is None or \
-                (input_data["from"]) is None or (input_data["entry_reason"]) is None:
-            return ["Reject"]
+    if not valid_passport_format(input_data["passport"]) or not valid_date_format(input_data["birth_date"]):
+        return "Reject"
+    if (input_data["first_name"] or input_data["last_name"] or input_data["home"] or input_data["from"] or
+            input_data["entry_reason"]) == "":
+            return "Reject"
 
 
 def test_returning_home(input_data):
     """
     Checks whether the traveller is "returning" and home country is "KAN"
     :param input_data: dictionary with information about travellers
-    :return: List of strings, Accept if home country is "KAN", None otherwise
+    :return: List of strings, Accept if home country is "KAN"
     """
-    for entry in input_data:
-        if entry["entry_reason"] == "returning" and entry["home"]["country"] == "KAN":
-            return ["Accept"]
-        else:
-            return None
+    if input_data["entry_reason"] == "returning" and input_data["home"]["country"] == "KAN":
+            return "Accept"
 
 
 def test_watchlist(input_data, watch_list):
     """
     Checks whether the traveller's name or passport number is on the watchlist
     :param input_data: dictionary with information about travellers
-    :param watch_list: watchlist provided by Ministry
-    :return: List of strings, Secondary if on the watchlist, None otherwise
+    :param watch_list: list; watchlist provided by Ministry
+    :return: List of strings, Secondary if on the watchlist
     """
-
     for entry in watch_list:
         if (entry["first_name"] == input_data["first_name"] and entry["last_name"] == input_data["last_name"]) or \
                 entry["passport"] == input_data["passport"]:
-            return ["Secondary"]
-        else:
-            return None
+            return "Secondary"
 
 
 def test_quarantine(input_data, country_list):
     """
     Checks whether the traveller is coming from or via a country that has a medical advisory
     :param input_data: dictionary with information about travellers
-    :param country_list: list of countries with medical advisory provided by Ministry
-    :return: List of strings, Quarantine if medical advisory, None otherwise
+    :param country_list: dictionary with list of countries that has medical advisory details provided by Ministry
+    :return: List of strings, Quarantine if medical advisory
     """
-    for entry in country_list:
-        if (entry["from"]["country"] or entry["via"]["country"]) in country_list and country_list["medical_advisory"]:
-            return ["Quarantine"]
-        else:
-            return None
+    if "from" in input_data.keys():
+            country_from = input_data["from"]["country"]
+            if country_from in country_list and country_list[country_from]["medical_advisory"]:
+                return "Quarantine"
+    elif "via" in input_data.keys():
+            country_from = input_data["via"]["country"]
+            if country_from in country_list and country_list[country_from]["medical_advisory"]:
+                return "Quarantine"
 
 
 def valid_visa(input_data):
@@ -112,10 +104,40 @@ def valid_visa(input_data):
     if "visa" in input_data.keys():
         visa_date = datetime.datetime.strptime(input_data["visa"]["date"], '%Y-%m%d')
         today_date = datetime.datetime.today()
-        if (today_date - visa_date).year < 2:
-            return True
+        if visa_date < today_date:
+            if (today_date - visa_date).days < 730:
+                return True
+            else:
+                return False
         else:
-            return False
+            print("Invalid date")
+            raise ValueError
+
+
+def test_visitor_visa(input_data, country_list):
+    """
+    Checks whether the traveller's home country needs a visitor visa if entry reason is visit
+    :param input_data: dictionary with information about travellers
+    :param country_list: dictionary with list of countries that has visitor visa details provided by Ministry
+    :return: List of strings; Reject if visitor visa required and not valid visa
+    """
+    if input_data["entry_reason"] == "visit" and input_data["home"]["country"] in country_list.keys() and \
+       country_list[input_data["home"]["country"]]["visitor_visa_required"] == "1":
+        if valid_visa(input_data) is False:
+            return "Reject"
+
+
+def test_transit_visa(input_data, country_list):
+    """
+    Checks whether the traveller's home country needs a transit visa if entry reason is transit
+    :param input_data: dictionary with information about travellers
+    :param country_list: dictionary with list of countries that has transit visa details provided by Ministry
+    :return: List of strings; Reject if transit visa required and not valid visa
+    """
+    if input_data["entry_reason"] == "transit" and input_data["home"]["country"] in country_list.keys() and \
+       country_list[input_data["home"]["country"]]["transit_visa_required"] == "1":
+        if valid_visa(input_data) is False:
+            return "Reject"
 
 
 def valid_passport_format(passport_number):
