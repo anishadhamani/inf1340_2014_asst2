@@ -48,22 +48,23 @@ def decide(input_file, watchlist_file, countries_file):
         else:
             return False
 
-    if test_quarantine is True:
+    for
+        if test_quarantine is True:
             result.append("Priority One: Quarantine")
-    if valid_entry_record is True:
+        if valid_entry_record is True:
             result.append("Priority Two: Reject")
-    if test_returning_home is True:
+        if test_returning_home is True:
             result.append("Priority Two: Reject")
-    if test_watchlist is True:
+        if test_watchlist is True:
             result.append("Priority Three: Secondary")
-    if test_visitor_visa is True:
+        if test_visitor_visa is True:
             result.append ("Priority Two: Reject")
-    if test_transit_visa is True:
+        if test_transit_visa is True:
             result.append("Priority Two: Reject")
-    else:
+        else:
             result.append("Priority Four: Accept")
 
-    return result
+        return result
 
 def valid_entry_record(input_data):
     """
