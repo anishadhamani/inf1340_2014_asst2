@@ -31,15 +31,26 @@ def decide(input_file, watchlist_file, countries_file):
     watchlist = json.load(open(watchlist_file))
     countries = json.load(open(countries_file))
 
-    priority_list = ["Quarantine", "Reject", "Secondary", "Accept"]
-
-    for entry in range(len(input_info)):
-        result = ["Accept", valid_entry_record(input_info[entry]), test_returning_home(input_info[entry]),
-                  test_watchlist(input_info[entry], watchlist), test_quarantine(input_info[entry], countries)]
-        print(result)
-        # removing None values from the list
-        result = [item for item in result if item is not None]
-    return result
+    def priority_order(input_data):
+        """
+        Checks the order of priority of immigration decisions to be resolved for each traveller
+        :param input_data: dictionary with information about travellers
+        :return: List of strings, "Priority One Processing" if Quarantine, "Priority Two Processing" if Reject,
+                "Priority Three Processing" if Secondary, "Priority Four Processing" if Accept
+        """
+        for entry in range(len(input_data)):
+                if ["Quarantine", test_quarantine(input_info[entry], countries)]:
+                    print("Priority One Processing")
+                    return "Priority One Processing"
+                elif ["Reject", valid_entry_record(input_info[entry])]:
+                    print("Priority Two Processing")
+                    return "Priority Two Processing"
+                elif ["Secondary", test_watchlist(input_info[entry], watchlist)]:
+                    print("Priority Three Processing")
+                    return "Priority Three Processing"
+                elif ["Accept", valid_entry_record(input_info[entry]), test_returning_home(input_info[entry])]:
+                    print("Priority Four Processing")
+                    return "Priority Four Processing"
 
 
 def valid_entry_record(input_data):
@@ -49,7 +60,7 @@ def valid_entry_record(input_data):
     :return: List of strings, Reject if record is not complete
     """
     if not valid_passport_format(input_data["passport"]) or not valid_date_format(input_data["birth_date"]):
-        return "Reject"
+        return "Accept"
     if (input_data["first_name"] or input_data["last_name"] or input_data["home"] or input_data["from"] or
             input_data["entry_reason"]) == "":
             return "Reject"
