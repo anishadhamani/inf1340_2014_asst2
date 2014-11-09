@@ -31,34 +31,47 @@ def decide(input_file, watchlist_file, countries_file):
     watchlist = json.load(open(watchlist_file))
     countries = json.load(open(countries_file))
 
+    priority_list = ["Quarantine", "Reject", "Secondary", "Accept"]
+
+    for entry in range(len(input_info)):
+        result = ["Accept", valid_entry_record(input_info[entry]), test_returning_home(input_info[entry]),
+            test_watchlist(input_info[entry], watchlist), test_quarantine(input_info[entry], countries)]
+        print(result)
+        # removing None values from the list
+        result = [item for item in result if item is not None]
+    return result
+
+
+def order_of_priority(input_info):
+
     result = []
     for entry in range(len(input_info)):
         if test_quarantine is not None:
             return True
-        if valid_entry_record is not None:
+        elif valid_entry_record is not None:
             return True
-        if test_returning_home is None:
+        elif test_returning_home is None:
             return True
-        if test_watchlist is not None:
+        elif test_watchlist is not None:
             return True
-        if test_visitor_visa is not None:
+        elif test_visitor_visa is not None:
             return True
-        if test_transit_visa is None:
+        elif test_transit_visa is None:
             return True
         else:
             return False
 
     if test_quarantine is True:
             result.append("Priority One: Quarantine")
-    if valid_entry_record is True:
+    elif valid_entry_record is True:
             result.append("Priority Two: Reject")
-    if test_returning_home is True:
+    elif test_returning_home is True:
             result.append("Priority Two: Reject")
-    if test_watchlist is True:
+    elif test_watchlist is True:
             result.append("Priority Three: Secondary")
-    if test_visitor_visa is True:
+    elif test_visitor_visa is True:
             result.append ("Priority Two: Reject")
-    if test_transit_visa is True:
+    elif test_transit_visa is True:
             result.append("Priority Two: Reject")
     else:
             result.append("Priority Four: Accept")
