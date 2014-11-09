@@ -26,20 +26,29 @@ def decide(input_file, watchlist_file, countries_file):
         an entry or transit visa is required, and whether there is currently a medical advisory
     :return: List of strings. Possible values of strings are: "Accept", "Reject", "Secondary", and "Quarantine"
     """
-
-    input_info = json.load(open(input_file))
-    watchlist = json.load(open(watchlist_file))
-    countries = json.load(open(countries_file))
+    try:
+        input_info = json.load(open(input_file))
+        watchlist = json.load(open(watchlist_file))
+        countries = json.load(open(countries_file))
+    except FileNotFoundError:
+        raise FileNotFoundError("File not found")
 
     priority_list = ["Quarantine", "Reject", "Secondary", "Accept"]
-
-    for entry in range(len(input_info)):
+    final_decision = []
+    # result list with default decision as Accept
+    # function calls to check for conditions
+    for entry, value in enumerate(input_info):
         result = ["Accept", valid_entry_record(input_info[entry]), test_returning_home(input_info[entry]),
-                  test_watchlist(input_info[entry], watchlist), test_quarantine(input_info[entry], countries)]
-        print(result)
-        # removing None values from the list
+                  test_watchlist(input_info[entry], watchlist), test_quarantine(input_info[entry], countries),
+                  test_visitor_visa(input_info[entry], countries), test_transit_visa(input_info[entry], countries)]
+        # removing None values from the result list
         result = [item for item in result if item is not None]
-    return result
+        # selecting decision based on priority
+        for choice in priority_list:
+            if choice in result:
+                final_decision.append(choice)
+                break
+    return final_decision
 
 
 def valid_entry_record(input_data):
@@ -48,11 +57,13 @@ def valid_entry_record(input_data):
     :param input_data: dictionary with information about travellers
     :return: List of strings, Reject if record is not complete
     """
+    # check if the passport and date have a valid format
     if not valid_passport_format(input_data["passport"]) or not valid_date_format(input_data["birth_date"]):
         return "Reject"
-    if (input_data["first_name"] or input_data["last_name"] or input_data["home"] or input_data["from"] or
-            input_data["entry_reason"]) == "":
-            return "Reject"
+    # check for null values for required fields in entry record
+    if input_data["first_name"] == "" or input_data["last_name"] == "" or input_data["home"] == "" or \
+            input_data["from"] == "" or input_data["entry_reason"] == "":
+        return "Reject"
 
 
 def test_returning_home(input_data):
@@ -85,10 +96,12 @@ def test_quarantine(input_data, country_list):
     :param country_list: dictionary with list of countries that has medical advisory details provided by Ministry
     :return: List of strings, Quarantine if medical advisory
     """
+    # check if from country has a medical advisory
     if "from" in input_data.keys():
             country_from = input_data["from"]["country"]
             if country_from in country_list and country_list[country_from]["medical_advisory"]:
                 return "Quarantine"
+    # check if via country has a medical advisory
     elif "via" in input_data.keys():
             country_from = input_data["via"]["country"]
             if country_from in country_list and country_list[country_from]["medical_advisory"]:
@@ -102,16 +115,16 @@ def valid_visa(input_data):
     :return: Boolean; True if visa is valid, False otherwise
     """
     if "visa" in input_data.keys():
-        visa_date = datetime.datetime.strptime(input_data["visa"]["date"], '%Y-%m%d')
+        visa_format = re.compile('^\w{5}-\w{5}$')
+        visa_date = datetime.datetime.strptime(input_data["visa"]["date"], '%Y-%m-%d')
+        # get today's date
         today_date = datetime.datetime.today()
-        if visa_date < today_date:
-            if (today_date - visa_date).days < 730:
-                return True
-            else:
-                return False
+        # check if visa is less than 2 years old and visa code is correct format
+        if visa_date < today_date and (today_date - visa_date).days < 730 and\
+                visa_format.match(input_data["visa"]["code"]):
+            return True
         else:
-            print("Invalid date")
-            raise ValueError
+            return False
 
 
 def test_visitor_visa(input_data, country_list):
@@ -121,7 +134,7 @@ def test_visitor_visa(input_data, country_list):
     :param country_list: dictionary with list of countries that has visitor visa details provided by Ministry
     :return: List of strings; Reject if visitor visa required and not valid visa
     """
-    if input_data["entry_reason"] == "visit" and input_data["home"]["country"] in country_list.keys() and \
+    if input_data["entry_reason"] == "visit" and input_data["home"]["country"] in country_list and \
        country_list[input_data["home"]["country"]]["visitor_visa_required"] == "1":
         if valid_visa(input_data) is False:
             return "Reject"
@@ -134,7 +147,7 @@ def test_transit_visa(input_data, country_list):
     :param country_list: dictionary with list of countries that has transit visa details provided by Ministry
     :return: List of strings; Reject if transit visa required and not valid visa
     """
-    if input_data["entry_reason"] == "transit" and input_data["home"]["country"] in country_list.keys() and \
+    if input_data["entry_reason"] == "transit" and input_data["home"]["country"] in country_list and \
        country_list[input_data["home"]["country"]]["transit_visa_required"] == "1":
         if valid_visa(input_data) is False:
             return "Reject"
@@ -146,7 +159,7 @@ def valid_passport_format(passport_number):
     :param passport_number: alpha-numeric string
     :return: Boolean; True if the format is valid, False otherwise
     """
-    passport_format = re.compile('.{5}-.{5}-.{5}-.{5}-.{5}')
+    passport_format = re.compile('^\w{5}-\w{5}-\w{5}-\w{5}-\w{5}$')
 
     if passport_format.match(passport_number):
         return True

@@ -18,17 +18,17 @@ from papers import decide
 def test_basic():
     # test for valid test cases
     # test for returning citizen
-    assert decide("/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/test_returning_citizen.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/watchlist.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/countries.json") == ["Accept", "Accept"]
+    assert decide("test_returning_citizen.json", "watchlist.json", "countries.json") == ["Accept", "Accept"]
     # test for traveller in watchlist
-    assert decide("/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/test_watchlist.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/watchlist.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/countries.json") == ["Secondary"]
+    assert decide("test_watchlist.json", "watchlist.json", "countries.json") == ["Secondary"]
     # test for medical advisory
-    assert decide("/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/test_quarantine.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/watchlist.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/countries.json") == ["Quarantine"]
+    assert decide("test_quarantine.json", "watchlist.json", "countries.json") == ["Quarantine"]
+    # test for visitor visa
+    assert decide("test_visitor_visa.json", "watchlist.json", "countries.json") == ["Accept"]
+    # test for transit visa
+    assert decide("test_transit_visa.json", "watchlist.json", "countries.json") == ["Accept", "Quarantine"]
+    # test for lowercase
+    assert decide("test_lowercase.json", "watchlist.json", "countries.json") == ["Accept"]
 
 
 def test_files():
@@ -36,22 +36,18 @@ def test_files():
     with pytest.raises(FileNotFoundError):
         decide("test_returning_citizen.json", "", "countries.json")
         decide("test_watchlist.json", "watchlist.json", "")
-        decide("test_returning_citizen.json", "watchlist.json", "")
+        decide("test_visitor_visa.json", "watchlist.json", "")
         decide("", "", "countries.json")
 
 
 def test_invalid():
     # test for invalid test cases
     # test for invalid passport number
-    assert decide("/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/test_passport.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/watchlist.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/countries.json") == ["Reject"]
+    assert decide("test_passport.json", "watchlist.json", "countries.json") == ["Reject"]
     # test for invalid birthdate
-    assert decide("/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/test_birthdate.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/watchlist.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/countries.json") == ["Reject"]
+    assert decide("test_birthdate.json", "watchlist.json", "countries.json") == ["Reject"]
     # test for invalid visa
-    assert decide("/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/test_visa.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/watchlist.json",
-                  "/Users/irfanmavani/PycharmProjects/inf1340_2014_asst2/countries.json") == ["Reject"]
+    assert decide("test_visa.json", "watchlist.json", "countries.json") == ["Reject"]
+    # test for invalid name
+    assert decide("test_name.json", "watchlist.json", "countries.json") == ["Reject"]
 
