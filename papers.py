@@ -38,15 +38,16 @@ def decide(input_file, watchlist_file, countries_file):
     # result list with default decision as Accept
     # function calls to check for conditions
     for entry, value in enumerate(input_info):
-        result = ["Accept", valid_entry_record(input_info[entry]), test_returning_home(input_info[entry]),
-                  test_watchlist(input_info[entry], watchlist), test_quarantine(input_info[entry], countries),
-                  test_visitor_visa(input_info[entry], countries), test_transit_visa(input_info[entry], countries)]
+        result = ["Accept", valid_entry_record(input_info[entry]), returning_home_validation(input_info[entry]),
+                  watchlist_validation(input_info[entry], watchlist), quarantine_validation(input_info[entry],
+                  countries), visitor_visa_validation(input_info[entry], countries),
+                  transit_visa_validation(input_info[entry], countries)]
         # removing None values from the result list
         result = [item for item in result if item is not None]
         # selecting decision based on priority
         for choice in priority_list:
             if choice in result:
-                final_decision.append()
+                final_decision.append(choice)
                 break
     return final_decision
 
@@ -66,7 +67,7 @@ def valid_entry_record(input_data):
         return "Reject"
 
 
-def test_returning_home(input_data):
+def returning_home_validation(input_data):
     """
     Checks whether the traveller is "returning" and home country is "KAN"
     :param input_data: dictionary with information about travellers
@@ -76,7 +77,7 @@ def test_returning_home(input_data):
             return "Accept"
 
 
-def test_watchlist(input_data, watch_list):
+def watchlist_validation(input_data, watch_list):
     """
     Checks whether the traveller's name or passport number is on the watchlist
     :param input_data: dictionary with information about travellers
@@ -89,7 +90,7 @@ def test_watchlist(input_data, watch_list):
             return "Secondary"
 
 
-def test_quarantine(input_data, country_list):
+def quarantine_validation(input_data, country_list):
     """
     Checks whether the traveller is coming from or via a country that has a medical advisory
     :param input_data: dictionary with information about travellers
@@ -110,7 +111,7 @@ def test_quarantine(input_data, country_list):
 
 def valid_visa(input_data):
     """
-    Checks whether a visa is valid i.e. less than 2 years old
+    Checks whether a visa is valid i.e. less than 2 years old and visa code is two sets of five alpha-number characters
     :param input_data: dictionary with information about travellers
     :return: Boolean; True if visa is valid, False otherwise
     """
@@ -127,7 +128,7 @@ def valid_visa(input_data):
             return False
 
 
-def test_visitor_visa(input_data, country_list):
+def visitor_visa_validation(input_data, country_list):
     """
     Checks whether the traveller's home country needs a visitor visa if entry reason is visit
     :param input_data: dictionary with information about travellers
@@ -140,7 +141,7 @@ def test_visitor_visa(input_data, country_list):
             return "Reject"
 
 
-def test_transit_visa(input_data, country_list):
+def transit_visa_validation(input_data, country_list):
     """
     Checks whether the traveller's home country needs a transit visa if entry reason is transit
     :param input_data: dictionary with information about travellers
