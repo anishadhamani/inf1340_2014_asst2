@@ -2,11 +2,7 @@
 
 """ Module to test papers.py  """
 
-__author__ = 'Susan Sim'
-__email__ = "ses@drsusansim.org"
-
-__copyright__ = "2014 Susan Sim"
-__license__ = "MIT License"
+__author__ = 'Anisha Dhamani and Magdalene Schifferer'
 
 __status__ = "Prototype"
 
